@@ -1,32 +1,47 @@
 pipeline {
     agent any
 
-    tools {
-        // Install the Maven version configured as "M3" and add it to the path.
-        maven "maven-3.9.9"
+    environment {
+        MAVEN_HOME = tool 'Maven 3.9.9' // Adjust this according to your Maven installation in Jenkins
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                // Checkout code from SCM (Git)
+                git branch: 'main', url: 'https://github.com/MauryaShiva/Simple-Maven-Project.git'
+            }
+        }
+
         stage('Build') {
             steps {
-                // Get some code from a GitHub repository
-                git 'https://github.com/MauryaShiva/Simple-Maven-Project.git'
-
-                // Run Maven on a Unix agent.
-                sh "mvn -Dmaven.test.failure.ignore=true clean package"
-
-                // To run Maven on a Windows agent, use
-                // bat "mvn -Dmaven.test.failure.ignore=true clean package"
+                // Run Maven build
+                sh "'${MAVEN_HOME}/bin/mvn' clean install"
             }
+        }
 
-            post {
-                // If Maven was able to run the tests, even if some of the test
-                // failed, record the test results and archive the jar file.
-                success {
-                    junit '**/target/surefire-reports/TEST-*.xml'
-                    archiveArtifacts 'target/*.jar'
-                }
+        stage('Test') {
+            steps {
+                // Run Maven tests
+                sh "'${MAVEN_HOME}/bin/mvn' test"
             }
+        }
+        
+        stage('Deploy') {
+            steps {
+                // Add deployment steps here
+                echo 'Deploying application...'
+                // e.g., sh "'${MAVEN_HOME}/bin/mvn' deploy"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }
